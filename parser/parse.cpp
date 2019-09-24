@@ -19,7 +19,6 @@ void error () {
 }
 
 void match (token expected) {
-	if (input_token == t_eof) std::cout << "REEE ZIKAAA";
     if (input_token == expected) {
 		std::cout << "matched " << names[input_token];
         if (input_token == t_id || input_token == t_literal)
