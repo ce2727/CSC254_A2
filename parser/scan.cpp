@@ -3,8 +3,7 @@
 */
 
 #include <iostream>
-#include "string.h"
-#include "ctype.h"
+#include <string>
 
 #include "scan.h"
 
@@ -33,6 +32,8 @@ token scan() {
         token_image[i] = '\0';
         if (!strcmp(token_image, "read")) return t_read;
         else if (!strcmp(token_image, "write")) return t_write;
+        else if(!strcmp(token_image, "while")) return t_while;
+        else if(!strcmp(token_image, "if")) return t_if;
         else return t_id;
     }
     else if (isdigit(c)) {
