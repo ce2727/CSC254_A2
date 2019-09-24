@@ -24,7 +24,7 @@ token scan() {
         do {
             token_image[i++] = c;
             if (i >= MAX_TOKEN_LEN) {
-                printf("max token length exceeded\n");
+                std::cout << "max token length exceeded\n";
                 exit(1);
             }
             c = getchar();
@@ -32,8 +32,14 @@ token scan() {
         token_image[i] = '\0';
         if (!strcmp(token_image, "read")) return t_read;
         else if (!strcmp(token_image, "write")) return t_write;
+<<<<<<< HEAD
         else if(!strcmp(token_image, "while")) return t_while;
         else if(!strcmp(token_image, "if")) return t_if;
+=======
+		else if (!strcmp(token_image, "if")) return t_if;
+		else if (!strcmp(token_image, "while")) return t_while;
+		else if (!strcmp(token_image, "end")) return t_end;
+>>>>>>> 4650c0a3497c2e67611f3e273ff0611f7890ed7c
         else return t_id;
     }
     else if (isdigit(c)) {
@@ -46,7 +52,7 @@ token scan() {
     } else switch (c) {
         case ':':
             if ((c = getchar()) != '=') {
-                fprintf(stderr, "error\n");
+                std::cerr << "error\n";
                 exit(1);
             } else {
                 c = getchar();
@@ -66,7 +72,7 @@ token scan() {
 				c = getchar();
 				return t_rule;
 			}
-			else if (isspace(c = getchar())) {//If the next char isn't =, it has to be space
+			else if (isspace(c = getchar())) {
 				c = getchar();
 				return t_rule;
 			}
@@ -78,15 +84,15 @@ token scan() {
 		case '=':
 			if ((c = getchar()) != '=')
 			{
-				c = getchar();
-				return t_rule;
-			}
-			else {
 				std::cerr << "error";
 				exit(1);
 			}
+			else {
+				c = getchar();
+				return t_rule;
+			}
         default:
-            printf("error\n");
+            std::cerr << "error\n";
             exit(1);
     }
 }
