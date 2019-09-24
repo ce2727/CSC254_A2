@@ -19,6 +19,7 @@ void error () {
 }
 
 void match (token expected) {
+	if (input_token == t_eof) std::cout << "REEE ZIKAAA";
     if (input_token == expected) {
 		std::cout << "matched " << names[input_token];
         if (input_token == t_id || input_token == t_literal)
@@ -46,6 +47,8 @@ void program () {
         case t_id:
         case t_read:
         case t_write:
+		case t_while:
+		case t_if:
         case t_eof:
 			std::cout << "predict program --> stmt_list eof\n";
             stmt_list ();
@@ -59,11 +62,20 @@ void stmt_list () {
     switch (input_token) {
         case t_id:
         case t_read:
+		case t_while:
+		case t_if:
         case t_write:
+			std::cout << "predict stmt_list --> stmt stmt_list\n";
+			stmt();
+			stmt_list();
+			break;
+		case t_end:
             std::cout << "predict stmt_list --> stmt stmt_list\n";
+			match(t_end);
             stmt ();
             stmt_list ();
             break;
+
         case t_eof:
             std::cout << "predict stmt_list --> epsilon\n";
             break;          /*  epsilon production */
@@ -73,6 +85,20 @@ void stmt_list () {
 
 void stmt () {
     switch (input_token) {
+		case t_if:
+			std::cout << "predict stmt --> if condition stmt_list end\n";
+			match(t_if);
+			condition();
+			stmt_list();
+			match(t_end);
+			break;
+		case t_while:
+			std::cout << "predict stmt --> while condition stmt_list end\n";
+			match(t_while);
+			condition();
+			stmt_list();
+			match(t_end);
+			break;
         case t_id:
             std::cout << "predict stmt --> id gets expr\n";
             match (t_id);
@@ -89,12 +115,6 @@ void stmt () {
             match (t_write);
             expr ();
             break;
-		case t_if:
-			std::cout << "predict stmt --> if condition stmt_list end\n";
-			match (t_if);
-			condition();
-			stmt_list();
-			match(t_end);
         default: error ();
     }
 }
@@ -139,6 +159,10 @@ void term_tail () {
         case t_id:
         case t_read:
         case t_write:
+		case t_if:
+		case t_while:
+		case t_rule:
+		case t_end:
         case t_eof:
 			std::cout << "predict term_tail --> epsilon\n";
             break;          /*  epsilon production */
@@ -174,6 +198,10 @@ void factor_tail () {
         case t_id:
         case t_read:
         case t_write:
+		case t_if:
+		case t_while:
+		case t_rule:
+		case t_end:
         case t_eof:
 			std::cout << "predict factor_tail --> epsilon\n";
             break;          /*  epsilon production */
