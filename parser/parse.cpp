@@ -45,8 +45,16 @@ void factor ();
 void add_op ();
 void mul_op ();
 void condition();
+void instantiateFirstSet();
+void instantiateFollowSet();
+void instantiateEPS();
+void checkForErrors(string sym);
 
 void program () {
+    instantiateFirstSet();
+    instantiateFollowSet();
+    instantiateEPS();
+    checkForErrors("P");
     switch (input_token) {
         case t_id:
         case t_read:
@@ -57,12 +65,13 @@ void program () {
 			std::cout << "predict program --> stmt_list eof\n";
             stmt_list ();
             match (t_eof);
-            break; 
+            return; 
         default: report_error ("P");
     }
 }
 
 void stmt_list () {
+    checkForErrors("SL");
     switch (input_token) {
         case t_id:
         case t_read:
@@ -77,7 +86,7 @@ void stmt_list () {
             std::cout << "predict stmt_list --> stmt stmt_list\n";
 			match(t_end);
             stmt ();
-            stmt_list ();
+            stmt_list();
             break;
 
         case t_eof:
@@ -88,6 +97,7 @@ void stmt_list () {
 }
 
 void stmt () {
+    checkForErrors("S");
     switch (input_token) {
 		case t_if:
 			std::cout << "predict stmt --> if condition stmt_list end\n";
@@ -105,25 +115,26 @@ void stmt () {
 			break;
         case t_id:
             std::cout << "predict stmt --> id gets expr\n";
-            match (t_id);
-            match (t_gets);
-            expr ();
+            match(t_id);
+            match(t_gets);
+            expr();
             break;
         case t_read:
             std::cout << "predict stmt --> read id\n";
-            match (t_read);
-            match (t_id);
+            match(t_read);
+            match(t_id);
             break;
         case t_write:
             std::cout << "predict stmt --> write expr\n";
             match (t_write);
-            expr ();
+            expr();
             break;
         default: report_error("S");
     }
 }
 
 void condition() {
+    checkForErrors("C");
 	switch (input_token) {
 	case t_id:
 	case t_literal:
@@ -137,27 +148,29 @@ void condition() {
 	}
 }
 
-void expr () {
+void expr() {
+    checkForErrors("E");
     switch (input_token) {
         case t_id:
         case t_literal:
         case t_lparen:
 			std::cout << "predict expr --> term term_tail\n";
-            term ();
-            term_tail ();
+            term();
+            term_tail();
             break;
         default: report_error("E");
     }
 }
 
-void term_tail () {
+void term_tail() {
+    checkForErrors("TT");
     switch (input_token) {
         case t_add:
         case t_sub:
 			std::cout << "predict term_tail --> add_op term term_tail\n";
-            add_op ();
-            term ();
-            term_tail ();
+            add_op();
+            term();
+            term_tail();
             break;
         case t_rparen:
         case t_id:
@@ -175,26 +188,28 @@ void term_tail () {
 }
 
 void term () {
+    checkForErrors("T");
     switch (input_token) {
         case t_id:
         case t_literal:
         case t_lparen:
 			std::cout << "predict term --> factor factor_tail\n";
-            factor ();
-            factor_tail ();
+            factor();
+            factor_tail();
             break;
         default: report_error("T");
     }
 }
 
 void factor_tail () {
+    checkForErrors("FT");
     switch (input_token) {
         case t_mul:
         case t_div:
 			std::cout << "predict factor_tail --> mul_op factor factor_tail\n";
-            mul_op ();
-            factor ();
-            factor_tail ();
+            mul_op();
+            factor();
+            factor_tail();
             break;
         case t_add:
         case t_sub:
@@ -214,10 +229,11 @@ void factor_tail () {
 }
 
 void factor () {
+    checkForErrors("F");
     switch (input_token) {
         case t_id :
 			std::cout << "predict factor --> id\n";
-            match (t_id);
+            match(t_id);
             break;
         case t_literal:
 			std::cout << "predict factor --> literal\n";
@@ -225,43 +241,43 @@ void factor () {
             break;
         case t_lparen:
 			std::cout << "predict factor --> lparen expr rparen\n";
-            match (t_lparen);
-            expr ();
-            match (t_rparen);
+            match(t_lparen);
+            expr();
+            match(t_rparen);
             break;
         default: report_error("F");
     }
 }
 
 void add_op () {
+    checkForErrors("ao");
     switch (input_token) {
         case t_add:
 			std::cout << "predict add_op --> add\n";
-            match (t_add);
+            match(t_add);
             break;
         case t_sub:
 			std::cout << "predict add_op --> sub\n";
-            match (t_sub);
+            match(t_sub);
             break;
         default: report_error("ao");
     }
 }
 
 void mul_op () {
+    checkForErrors("mo");
     switch (input_token) {
         case t_mul:
 			std::cout << "predict mul_op --> mul\n";
-            match (t_mul);
+            match(t_mul);
             break;
         case t_div:
             std::cout <<  "predict mul_op --> div\n";
-            match (t_div);
+            match(t_div);
             break;
         default: report_error("mo");
     }
 }
-
-
 
 void instantiateFirstSet() {
     //should P_List and SL_List include epsilon? if so how
@@ -334,44 +350,31 @@ void instantiateEPS() {
 }
 
 /*
-*
+* 
 */
 void checkForErrors (string sym) {
     list<token> firstSet = first[sym];
     list<token> followSet = follow[sym];
+    bool EPS = eps[sym];
     bool containsInFirst = (find(firstSet.begin(), firstSet.end(), input_token) != firstSet.end());
-    bool EPS = eps[sym]; 
+     
     if(!(containsInFirst || EPS)){
         report_error("check");
-        //do{ 
-            //delete
-        //} while (input_token !in first or follow or $$) 
+        bool containsInFollow;
+        bool eof;
+        do{ 
+            input_token = scan();
+            containsInFirst = (find(firstSet.begin(), firstSet.end(), input_token) != firstSet.end());
+            containsInFollow = (find(followSet.begin(), followSet.end(), input_token) != followSet.end());
+            eof = (input_token == t_eof);
+        } while (!(containsInFirst || containsInFollow ||eof)); 
     } else {
         return;
     }
 }
 
 int main () {
-    //input_token = scan ();
-   // program ();
-    cout << "HERS";
-    instantiateFirstSet();
-    instantiateFollowSet();
-    instantiateEPS();
-    list<token> listylist = first["ao"];
-
-    //BELOW LINE: to 
-    bool found = (find(listylist.begin(), listylist.end(), t_add)!= listylist.end());
-   
-    cout << found << endl;
-    cout << "size: " << first.size() << follow.size() << eps.size() << endl;
+    input_token = scan ();
+    program ();
     return 0;
 }
-
-
-
-
-// list<token>::iterator it = listylist.begin();
-  //  advance(it, 1);
-
-  //another way to add element to map first["P"] = P_List; 

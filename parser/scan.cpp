@@ -72,22 +72,32 @@ token scan() {
 				return t_rule;
 			}
 			else {
-				std::cerr << "error";
+				std::cerr << "error, expected = after < or >" << std::endl;
 				exit(1);
 			}
 		case '!':
 		case '=':
 			if ((c = getchar()) != '=')
 			{
-				std::cerr << "error";
+				std::cerr << "error, expected = after =" << std::endl;
 				exit(1);
 			}
 			else {
 				c = getchar();
 				return t_rule;
 			}
+        case '$' :
+            if ((c = getchar()) != '$')
+            {
+                std::cerr << "error, expected $ after $" << std::endl;
+                exit(1);
+            }
+            else{
+                c = getchar();
+                return t_eof;
+            }
         default:
-            std::cerr << "error\n";
-            exit(1);
+           // std::cerr << " default error\n";
+            return t_unknown;
     }
 }
