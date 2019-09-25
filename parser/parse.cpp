@@ -5,16 +5,21 @@
     Michael L. Scott, 2008-2019.
 */
 #include <iostream>
-
+#include <map>
+#include <list>
+#include <algorithm>
 #include "scan.h"
-
+using namespace std;
 const char* names[] = {"read", "write", "id", "literal", "gets",
                        "add", "sub", "mul", "div", "lparen", "rparen", "eof", "if", "while", "end", "rule"};
 
 static token input_token;
+map<string,list<token> > first;
+map<string,list<token> > follow;
+map<string, bool> eps;
 
-void error () {
-    std::cout << "syntax error\n";
+void report_error (string sym) {
+    std::cout << "syntax error found in: " << sym << endl;
     exit (1);
 }
 
@@ -26,7 +31,7 @@ void match (token expected) {
         std::cout <<  ("\n");
         input_token = scan ();
     }
-    else error ();
+    else report_error ("match");
 }
 
 void program ();
@@ -52,8 +57,8 @@ void program () {
 			std::cout << "predict program --> stmt_list eof\n";
             stmt_list ();
             match (t_eof);
-            break;
-        default: error ();
+            break; 
+        default: report_error ("P");
     }
 }
 
@@ -78,7 +83,7 @@ void stmt_list () {
         case t_eof:
             std::cout << "predict stmt_list --> epsilon\n";
             break;          /*  epsilon production */
-        default: error ();
+        default: report_error ("SL");
     }
 }
 
@@ -114,7 +119,7 @@ void stmt () {
             match (t_write);
             expr ();
             break;
-        default: error ();
+        default: report_error("S");
     }
 }
 
@@ -128,7 +133,7 @@ void condition() {
 		match(t_rule);
 		expr();
 		break;
-	default: error();
+	default: report_error("C");
 	}
 }
 
@@ -141,7 +146,7 @@ void expr () {
             term ();
             term_tail ();
             break;
-        default: error ();
+        default: report_error("E");
     }
 }
 
@@ -165,7 +170,7 @@ void term_tail () {
         case t_eof:
 			std::cout << "predict term_tail --> epsilon\n";
             break;          /*  epsilon production */
-        default: error ();
+        default: report_error("TT");
     }
 }
 
@@ -178,7 +183,7 @@ void term () {
             factor ();
             factor_tail ();
             break;
-        default: error ();
+        default: report_error("T");
     }
 }
 
@@ -204,7 +209,7 @@ void factor_tail () {
         case t_eof:
 			std::cout << "predict factor_tail --> epsilon\n";
             break;          /*  epsilon production */
-        default: error ();
+        default: report_error("FT");
     }
 }
 
@@ -224,7 +229,7 @@ void factor () {
             expr ();
             match (t_rparen);
             break;
-        default: error ();
+        default: report_error("F");
     }
 }
 
@@ -238,7 +243,7 @@ void add_op () {
 			std::cout << "predict add_op --> sub\n";
             match (t_sub);
             break;
-        default: error ();
+        default: report_error("ao");
     }
 }
 
@@ -252,12 +257,121 @@ void mul_op () {
             std::cout <<  "predict mul_op --> div\n";
             match (t_div);
             break;
-        default: error ();
+        default: report_error("mo");
+    }
+}
+
+
+
+void instantiateFirstSet() {
+    //should P_List and SL_List include epsilon? if so how
+    list<token> P_List = {t_eof, t_id, t_read, t_write, t_if, t_while};
+    first.insert({"P", P_List});
+    list<token> SL_List = {t_id, t_read, t_write, t_if, t_while};
+    first.insert({"SL", SL_List});
+    list<token> S_List = {t_id, t_read, t_write, t_if, t_while};
+    first.insert({"S", S_List});
+    list<token> C_List = {t_lparen, t_id, t_literal};
+    first.insert({"C", C_List});
+    list<token> E_List = {t_lparen, t_id, t_literal};
+    first.insert({"E", E_List});
+    list<token> T_List = {t_lparen, t_id, t_literal};
+    first.insert({"T", T_List});
+    list<token> F_List = {t_lparen, t_id, t_literal};
+    first.insert({"F", F_List});
+    list<token> TT_List = {t_add, t_sub};//should include epsilon?
+    first.insert({"TT", TT_List});
+    list<token> FT_List = {t_mul, t_div};//should include epsilon?
+    first.insert({"FT", FT_List});
+    list<token> ro_List = {t_rule};
+    first.insert({"ro", ro_List});
+    list<token> ao_List = {t_add, t_sub};
+    first.insert({"ao", ao_List});
+    list<token> mo_List = {t_mul, t_div};
+    first.insert({"mo", mo_List});
+}
+
+void instantiateFollowSet() {
+    list<token> P_List = {};
+    follow.insert({"P", P_List});
+    list<token> SL_List = {t_end, t_eof};
+    follow.insert({"SL", SL_List});
+    list<token> S_List = {t_id, t_read, t_write, t_if, t_while, t_end, t_eof};
+    follow.insert({"S", S_List});
+    list<token> C_List = { t_id, t_read, t_write, t_if, t_while};
+    follow.insert({"C", C_List});
+    list<token> E_List = {t_rparen, t_rule, t_id, t_read, t_write, t_if, t_while, t_end, t_eof};
+    follow.insert({"E", E_List});
+    list<token> T_List = {t_add, t_sub, t_rparen, t_rule, t_id, t_read, t_write, t_if, t_while, t_end, t_eof};
+    follow.insert({"T", T_List});
+    list<token> F_List = {t_mul, t_div,t_add, t_sub, t_rparen, t_rule, t_id, t_read, t_write, t_if, t_while, t_end, t_eof};
+    follow.insert({"F", F_List});
+    list<token> TT_List = {t_rparen, t_rule, t_id, t_read, t_write, t_if, t_while, t_end, t_eof};
+    follow.insert({"TT", TT_List});
+    list<token> FT_List = {t_add, t_sub, t_rparen, t_rule, t_id, t_read, t_write, t_if, t_while, t_end, t_eof};
+    follow.insert({"FT", FT_List});
+    list<token> ro_List = {t_lparen, t_id, t_literal};
+    follow.insert({"ro", ro_List});
+    list<token> ao_List = {t_lparen, t_id, t_literal};
+    follow.insert({"ao", ao_List});
+    list<token> mo_List = {t_lparen, t_id, t_literal};
+    follow.insert({"mo", mo_List});
+}
+
+void instantiateEPS() {
+    eps.insert({"P", false});
+    eps.insert({"SL", true});
+    eps.insert({"S", false});
+    eps.insert({"C", false});
+    eps.insert({"E", false});
+    eps.insert({"T", false});
+    eps.insert({"F", false});
+    eps.insert({"TT", true});
+    eps.insert({"FT", true});
+    eps.insert({"ro", false});
+    eps.insert({"ao", false});
+    eps.insert({"mo", false});
+}
+
+/*
+*
+*/
+void checkForErrors (string sym) {
+    list<token> firstSet = first[sym];
+    list<token> followSet = follow[sym];
+    bool containsInFirst = (find(firstSet.begin(), firstSet.end(), input_token) != firstSet.end());
+    bool EPS = eps[sym]; 
+    if(!(containsInFirst || EPS)){
+        report_error("check");
+        //do{ 
+            //delete
+        //} while (input_token !in first or follow or $$) 
+    } else {
+        return;
     }
 }
 
 int main () {
-    input_token = scan ();
-    program ();
+    //input_token = scan ();
+   // program ();
+    cout << "HERS";
+    instantiateFirstSet();
+    instantiateFollowSet();
+    instantiateEPS();
+    list<token> listylist = first["ao"];
+
+    //BELOW LINE: to 
+    bool found = (find(listylist.begin(), listylist.end(), t_add)!= listylist.end());
+   
+    cout << found << endl;
+    cout << "size: " << first.size() << follow.size() << eps.size() << endl;
     return 0;
 }
+
+
+
+
+// list<token>::iterator it = listylist.begin();
+  //  advance(it, 1);
+
+  //another way to add element to map first["P"] = P_List; 
